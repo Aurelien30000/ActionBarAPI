@@ -10,16 +10,10 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.logging.Level;
-
 
 public class ActionBarAPI extends JavaPlugin implements Listener {
+
     private static Plugin plugin;
-    private static String nmsver;
-    private static boolean useOldMethods = false;
 
     public void onEnable() {
         plugin = this;
@@ -31,68 +25,11 @@ public class ActionBarAPI extends JavaPlugin implements Listener {
         Server server = getServer();
         ConsoleCommandSender console = server.getConsoleSender();
 
-        nmsver = Bukkit.getServer().getClass().getPackage().getName();
-        nmsver = nmsver.substring(nmsver.lastIndexOf(".") + 1);
-
-        if (nmsver.equalsIgnoreCase("v1_8_R1") || nmsver.startsWith("v1_7_")) { // Not sure if 1_7 works for the protocol hack?
-            useOldMethods = true;
-        }
-
-        try {
-            init();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         console.sendMessage(ChatColor.AQUA + getDescription().getName() + " V" + getDescription().getVersion() + " has been enabled!");
-        if(enableUpdates) {
+        if (enableUpdates) {
             CLUpdate clUpdate = new CLUpdate(this);
             Bukkit.getPluginManager().registerEvents(clUpdate, this);
         }
-    }
-
-
-    private static Class<?> craftPlayerClass, packetPlayOutChatClass, packetClass, chatSerializerClass,
-            iChatBaseComponentClass, chatComponentTextClass, chatMessageTypeClass;
-    private static Method m3;
-    private static Constructor<?> chatComponentTextConstructor;
-    //Depending on the version this is the constructor using chatMessageType or byte
-    private static Constructor<?> packetPlayOutChatConstructor;
-    private static Method craftPlayerHandleMethod;
-    private static Field playerConnectionField;
-
-    private static Object chatMessageType = null;
-
-    //Initialize reflections
-    private static void init() throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException {
-        craftPlayerClass = Class.forName("org.bukkit.craftbukkit." + nmsver + ".entity.CraftPlayer");
-        packetPlayOutChatClass = Class.forName("net.minecraft.server." + nmsver + ".PacketPlayOutChat");
-        packetClass = Class.forName("net.minecraft.server." + nmsver + ".Packet");
-
-        chatSerializerClass = Class.forName("net.minecraft.server." + nmsver + ".ChatSerializer");
-        iChatBaseComponentClass = Class.forName("net.minecraft.server." + nmsver + ".IChatBaseComponent");
-        m3 = chatSerializerClass.getDeclaredMethod("a", String.class);
-
-        chatComponentTextClass = Class.forName("net.minecraft.server." + nmsver + ".ChatComponentText");
-        chatComponentTextConstructor = chatComponentTextClass.getConstructor(new Class<?>[]{String.class});
-
-        try {
-            chatMessageTypeClass = Class.forName("net.minecraft.server." + nmsver + ".ChatMessageType");
-            Object[] chatMessageTypes = chatMessageTypeClass.getEnumConstants();
-            for (Object obj : chatMessageTypes) {
-                if (obj.toString().equals("GAME_INFO")) {
-                    chatMessageType = obj;
-                }
-            }
-
-            packetPlayOutChatConstructor = packetPlayOutChatClass.getConstructor(new Class<?>[]{iChatBaseComponentClass, chatMessageTypeClass});
-        }catch(ClassNotFoundException e) {
-            //Fallback
-            packetPlayOutChatConstructor = packetPlayOutChatClass.getConstructor(new Class<?>[]{iChatBaseComponentClass, byte.class});
-        }
-
-        craftPlayerHandleMethod = craftPlayerClass.getDeclaredMethod("getHandle");
-        playerConnectionField = craftPlayerClass.getDeclaredField("playerConnection");
     }
 
     public static void sendActionBar(Player player, String message) {
@@ -106,29 +43,7 @@ public class ActionBarAPI extends JavaPlugin implements Listener {
         if (actionBarMessageEvent.isCancelled())
             return;
 
-        try {
-            Object craftPlayer = craftPlayerClass.cast(player);
-            Object packet;
-
-            if (useOldMethods) {
-                Object cbc = iChatBaseComponentClass.cast(m3.invoke(chatSerializerClass, "{\"text\": \"" + message + "\"}"));
-                packet = packetPlayOutChatClass.getConstructor(new Class<?>[]{iChatBaseComponentClass, byte.class}).newInstance(cbc, (byte) 2);
-            } else {
-                Object chatComponentText = chatComponentTextConstructor.newInstance(message);
-                if (chatMessageTypeClass == null) {
-                    packet = packetPlayOutChatConstructor.newInstance(chatComponentText, chatMessageType);
-                }else{
-                    packet = packetPlayOutChatConstructor.newInstance(chatComponentText, (byte) 2);
-                }
-            }
-
-            Object craftPlayerHandle = craftPlayerHandleMethod.invoke(craftPlayer);
-            Object playerConnection = playerConnectionField.get(craftPlayerHandle);
-            Method sendPacketMethod = playerConnection.getClass().getDeclaredMethod("sendPacket", packetClass);
-            sendPacketMethod.invoke(playerConnection, packet);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        player.sendActionBar(message);
     }
 
     public static void sendActionBar(final Player player, final String message, int duration) {
@@ -152,7 +67,7 @@ public class ActionBarAPI extends JavaPlugin implements Listener {
                 public void run() {
                     sendActionBar(player, message);
                 }
-            }.runTaskLater(plugin, (long) duration);
+            }.runTaskLater(plugin, duration);
         }
     }
 
@@ -165,4 +80,5 @@ public class ActionBarAPI extends JavaPlugin implements Listener {
             sendActionBar(p, message, duration);
         }
     }
+
 }

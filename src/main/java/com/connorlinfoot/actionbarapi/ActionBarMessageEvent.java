@@ -5,44 +5,45 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 public class ActionBarMessageEvent extends Event {
-	private static final HandlerList handlers = new HandlerList();
-	private final Player player;
-	private String message;
-	private boolean cancelled = false;
 
-	public ActionBarMessageEvent(Player player, String message) {
-		this.player = player;
-		this.message = message;
-	}
+    private static final HandlerList handlers = new HandlerList();
+    private final Player player;
+    private String message;
+    private boolean cancelled = false;
 
-	@Override
-	public HandlerList getHandlers() {
-		return handlers;
-	}
+    public ActionBarMessageEvent(Player player, String message) {
+        this.player = player;
+        this.message = message;
+    }
 
-	public static HandlerList getHandlerList() {
-		return handlers;
-	}
+    @Override
+    public HandlerList getHandlers() {
+        return handlers;
+    }
 
-	public Player getPlayer() {
-		return player;
-	}
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
 
-	public String getMessage() {
-		return message;
-	}
+    public Player getPlayer() {
+        return player;
+    }
 
-	public void setMessage(String message) {
-		this.message = message;
-	}
+    public String getMessage() {
+        return message;
+    }
 
-	public boolean isCancelled() {
-		return cancelled;
-	}
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-	public void setCancelled(boolean cancelled) {
-		this.cancelled = cancelled;
-	}
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
 
 }
 
