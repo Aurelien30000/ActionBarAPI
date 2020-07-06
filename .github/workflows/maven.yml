@@ -24,4 +24,4 @@ jobs:
       run: mvn -B package --file pom.xml
     - uses: actions/upload-artifact@v2
       with:
-        path: path/to/artifact/ActionBarAPI.jar
+        path: target/ActionBarAPI-1.5.5.jar
